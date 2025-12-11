@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: Laravel MCP Finance System API
+  version: 1.0.0
+  description: >
+    API del sistema financiero demo que expone información de usuarios,
+    cuentas y resúmenes financieros.  
+    Utiliza autenticación por **Laravel Sanctum** y permite integrarse con un
+    servidor **MCP (Model Context Protocol)** para conexiones a agentes externos.
+
+servers:
+  - url: http://localhost:8002/api
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Auth
+    description: Autenticación y manejo de sesión
+  - name: Users
+    description: Información general de usuarios financieros
+  - name: Accounts
+    description: Cuentas y transacciones
+  - name: Summary
+    description: Resúmenes financieros
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+
+  responses:
+    Unauthorized:
+      description: Token inválido o ausente
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: No autorizado. Debes iniciar sesión (POST /api/login) o enviar un token Bearer válido.
+              code:
+                type: string
+                example: UNAUTHENTICATED
+
+paths:
+
+  /login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      description: Retorna el token Sanctum para acceder a recursos protegidos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: secret
+      responses:
+        200:
+          description: Token generado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags: [Auth]
+      security: [{ BearerAuth: [] }]
+      summary: Cerrar sesión
+      responses:
+        200:
+          description: Sesión cerrada correctamente
+
+  /me:
+    get:
+      tags: [Auth]
+      security: [{ BearerAuth: [] }]
+      summary: Obtener información del usuario autenticado
+      responses:
+        200:
+          description: Información del usuario autenticado
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /system/users:
+    get:
+      tags: [Users]
+      security: [{ BearerAuth: [] }]
+      summary: Listar todos los usuarios financieros
+      responses:
+        200:
+          description: Lista de usuarios
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /system/users/{id}:
+    get:
+      tags: [Users]
+      security: [{ BearerAuth: [] }]
+      summary: Obtener detalle de un usuario por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Detalle del usuario
+        404:
+          description: Usuario no encontrado
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /system/users/{id}/accounts:
+    get:
+      tags: [Accounts]
+      security: [{ BearerAuth: [] }]
+      summary: Listar cuentas de un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Lista de cuentas
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /system/users/{id}/financial-summary:
+    get:
+      tags: [Summary]
+      security: [{ BearerAuth: [] }]
+      summary: Obtener resumen financiero de un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Resumen financiero completo
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /system/accounts/{accountId}/transactions:
+    get:
+      tags: [Accounts]
+      security: [{ BearerAuth: [] }]
+      summary: Obtener transacciones de una cuenta
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Lista de transacciones
+        401:
+          $ref: "#/components/responses/Unauthorized"
